@@ -45,6 +45,11 @@ trait TranslatableTrait
     protected $fallbackLocale;
 
     /**
+     * @var null|array
+     */
+    protected $fallbackLocales;
+
+    /**
      * TranslatableTrait constructor.
      * @codeCoverageIgnore
      */
@@ -77,20 +82,23 @@ trait TranslatableTrait
 
             return $translation;
         }
-        if ($locale !== $this->fallbackLocale) {
-            if (isset($this->translationsCache[$this->fallbackLocale])) {
-                return $this->translationsCache[$this->fallbackLocale];
-            }
 
-            $expr = new Comparison('locale', '=', $this->fallbackLocale);
-            $fallbackTranslation = $this->translations->matching(new Criteria($expr))->first();
+        $translation = $this->getTranslationByFallbackLocale($locale, $this->fallbackLocale);
 
-            if (false !== $fallbackTranslation) {
-                $this->translationsCache[$this->fallbackLocale] = $fallbackTranslation; //@codeCoverageIgnore
+        if (null !== $translation) {
+            return $translation;
+        }
 
-                return $fallbackTranslation; //@codeCoverageIgnore
+        if (is_array($this->fallbackLocales)) {
+            foreach ($this->fallbackLocales as $fallbackLocale) {
+                $translation = $this->getTranslationByFallbackLocale($locale, $fallbackLocale);
+
+                if (null !== $translation) {
+                    return $translation;
+                }
             }
         }
+
         $translation = $this->createTranslation();
         $translation->setLocale($locale);
 
@@ -99,6 +107,29 @@ trait TranslatableTrait
         $this->translationsCache[$locale] = $translation;
 
         return $translation;
+    }
+
+    /**
+     * ionInterface|null
+     */
+    private function getTranslationByFallbackLocale(string $locale, ?string $fallbackLocale) : ?TranslationInterface
+    {
+        if ($fallbackLocale && ($locale !== $fallbackLocale)) {
+            if (isset($this->translationsCache[$fallbackLocale])) {
+                return $this->translationsCache[$fallbackLocale];
+            }
+
+            $expr = new Comparison('locale', '=', $fallbackLocale);
+            $fallbackTranslation = $this->translations->matching(new Criteria($expr))->first();
+
+            if (false !== $fallbackTranslation) {
+                $this->translationsCache[$fallbackLocale] = $fallbackTranslation; //@codeCoverageIgnore
+
+                return $fallbackTranslation; //@codeCoverageIgnore
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -187,6 +218,14 @@ trait TranslatableTrait
     public function setFallbackLocale(?string $fallbackLocale): void
     {
         $this->fallbackLocale = $fallbackLocale;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setFallbackLocales(?array $fallbackLocales): void
+    {
+        $this->fallbackLocales = $fallbackLocales;
     }
 
     /**

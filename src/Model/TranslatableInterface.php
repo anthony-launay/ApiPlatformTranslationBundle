@@ -51,4 +51,9 @@ interface TranslatableInterface
      * @param null|string $locale
      */
     public function setFallbackLocale(?string $locale): void;
+
+    /**
+     * @param null|array $locales
+     */
+    public function setFallbackLocales(?array $locales): void;
 }
